@@ -858,36 +858,33 @@ class Escaper {
 }
 
 Future<http.StreamedResponse> _validateResponse(
-    http.StreamedResponse response) {
+    http.StreamedResponse response) async {
   var statusCode = response.statusCode;
 
   // TODO: We assume that status codes between [200..400[ are OK.
   // Can we assume this?
   if (statusCode < 200 || statusCode >= 400) {
-    throwGeneralError() {
-      throw new client_requests.DetailedApiRequestError(
-          statusCode, 'No error details. HTTP status was: ${statusCode}.');
-    }
-
     // Some error happened, try to decode the response and fetch the error.
     Stream<String> stringStream = _decodeStreamAsText(response);
     if (stringStream != null) {
-      return stringStream.transform(JSON.decoder).first.then((json) {
-        if (json is Map && json['error'] is Map) {
-          var error = json['error'];
-          var code = error['code'];
-          var message = error['message'];
-          throw new client_requests.DetailedApiRequestError(code, message);
-        } else {
-          throwGeneralError();
-        }
-      });
-    } else {
-      throwGeneralError();
+      var json = stringStream.transform(JSON.decoder).single;
+      print('the json!');
+      print(const JsonEncoder.withIndent(' ').convert(json));
+      print(response.headers);
+      print(response.statusCode);
+
+      if (json is Map && json['error'] is Map) {
+        var error = json['error'];
+        var code = error['code'];
+        var message = error['message'];
+        throw new client_requests.DetailedApiRequestError(code, message);
+      }
     }
+    throw new client_requests.DetailedApiRequestError(
+        statusCode, 'No error details. HTTP status was: ${statusCode}.');
   }
 
-  return new Future.value(response);
+  return response;
 }
 
 Stream<String> _decodeStreamAsText(http.StreamedResponse response) {
