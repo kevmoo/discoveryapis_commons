@@ -868,10 +868,6 @@ Future<http.StreamedResponse> _validateResponse(
     Stream<String> stringStream = _decodeStreamAsText(response);
     if (stringStream != null) {
       var json = stringStream.transform(JSON.decoder).single;
-      print('the json!');
-      print(const JsonEncoder.withIndent(' ').convert(json));
-      print(response.headers);
-      print(response.statusCode);
 
       if (json is Map && json['error'] is Map) {
         var error = json['error'];
@@ -879,6 +875,8 @@ Future<http.StreamedResponse> _validateResponse(
         var message = error['message'];
         throw new client_requests.DetailedApiRequestError(code, message);
       }
+
+      throw "Sadness!\n" + const JsonEncoder.withIndent(' ').convert(json);
     }
     throw new client_requests.DetailedApiRequestError(
         statusCode, 'No error details. HTTP status was: ${statusCode}.');
